@@ -13,6 +13,8 @@ Spam proof contact form  that emails you the message and saves it in database.
 == Description ==
 
 Never Loose Contact form provides a spam proof contact form for your Wordpress site that emails you the message and saves it for viewing in the admin area.
+If you wish you can enter your contact details in the public settings for display above the contact form
+Emails are sent to your installation admin email address.
 
 == Installation ==
 
