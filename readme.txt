@@ -4,7 +4,7 @@ Donate link:
 Tags: contact form, anti-spam, email, database
 Requires at least: 3.3
 Tested up to: 3.5
-Stable tag: 0.21
+Stable tag: 0.22
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
