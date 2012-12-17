@@ -169,7 +169,7 @@ function contact_form_settings()
     
     $settings=get_option('contact_form_settings');
         
-        echo'<form action="" method="POST">';
+        echo'<h2>Settings</h2><p>If you would like the shortcode and/or widget to display your contact details above the email form, please fill in this form. If not leave it blank. Public contact form submission will be sent to your wordpress Admin Email contact</p><form action="" method="POST">';
         echo'<p><label style="width:100px;float:left;">Address</label><input type="text" name="address" ';
         if(!empty($settings['address']))echo' value="'.esc_html($settings['address']).'" ';
         echo'/></p>';
