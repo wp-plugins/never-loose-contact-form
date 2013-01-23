@@ -4,7 +4,7 @@ Plugin Name: Never Loose Contact Form
 Plugin URI: 
 Description: Simple to use spam free contact form using simple checkbox captcha, saving messages to database and emailing your admin contact
 Author: Andy Moyle
-Version: 0.22
+Version: 0.3
 Author URI: http://www.themoyles.co.uk/web-development/contact-form-plugin/
 */
 if (!function_exists ('add_action')):
@@ -27,7 +27,18 @@ function contact_form_install()
     }
 }
 contact_form_install();
-
+//add localisation
+$nlcf_translator_domain   = 'nlcf';
+$nlcf_is_setup = 0;
+function nlcf_loc_setup(){
+  global $nlcf_translator_domain, $nlcf_translator_is_setup;
+  if($nlcf_translator_is_setup) {
+    return;
+  }
+  load_plugin_textdomain( 'nlcf', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
+  $nlcf_translator_is_setup = 1;
+}
+add_action('plugins_loaded', 'nlcf_loc_setup');
 // Admin Bar Customisation
 function contact_form_admin_bar_render() {
  global $wp_admin_bar,$wpdb;
@@ -35,8 +46,8 @@ function contact_form_admin_bar_render() {
  $count=$wpdb->get_var($sql);
  // Add a new top level menu link
  // Here we add a customer support URL link
- $wp_admin_bar->add_menu( array('parent' => false, 'id' => 'contact form', 'title' => __('Contact Form ('. $count.' Today)'), 'href' => admin_url().'admin.php?page=contact_form/index.php' ));
- $wp_admin_bar->add_menu(array('parent' => 'contact_form','id' => 'contact_form_settings', 'title' => __('Settings'), 'href' => admin_url().'admin.php?page=contact_form/index.php&action=contact_form_settings' ));
+ $wp_admin_bar->add_menu( array('parent' => false, 'id' => 'contact form', 'title' => __('Contact Form ','nlcf'). $count.' '.__('Today','nlcf'), 'href' => admin_url().'admin.php?page=contact_form/index.php' ));
+ $wp_admin_bar->add_menu(array('parent' => 'contact_form','id' => 'contact_form_settings', 'title' => __('Settings','nlcf'), 'href' => admin_url().'admin.php?page=contact_form/index.php&action=contact_form_settings' ));
 
 }
 
@@ -68,19 +79,19 @@ function contact_form($widget=false)
     {
         if(empty($_POST['nlcf']))
         {//not real human checked
-                $out.='<div style="background-color: #eaeaea; border: 1px solid #D5D5D5; border-radius:5px;font-family: arial,helvetica,sans-serif; font-size: 13px; line-height: 18px; margin-bottom: 20px; margin-top: 8px; padding: 15px 20px 15px 20px; "><p>You appear to be a spammer, so the message wasn\'t sent.</p></div>';
+                $out.='<div style="background-color: #eaeaea; border: 1px solid #D5D5D5; border-radius:5px;font-family: arial,helvetica,sans-serif; font-size: 13px; line-height: 18px; margin-bottom: 20px; margin-top: 8px; padding: 15px 20px 15px 20px; "><p>'.__("You appear to be a spammer, so the message wasn't sent",'nlcf').'.</p></div>';
         }
         elseif(substr_count($_POST['contact_form_comment'], "http") > $settings['url'])
         {//too many urls
-            $out.='<div style="background-color: #eaeaea; border: 1px solid #D5D5D5; border-radius:5px;font-family: arial,helvetica,sans-serif; font-size: 13px; line-height: 18px; margin-bottom: 20px; margin-top: 8px; padding: 15px 20px 15px 20px; "><p>Message was not sent. There were too many web links in it - makes it look like you are a spammer.</p></div>';
+            $out.='<div style="background-color: #eaeaea; border: 1px solid #D5D5D5; border-radius:5px;font-family: arial,helvetica,sans-serif; font-size: 13px; line-height: 18px; margin-bottom: 20px; margin-top: 8px; padding: 15px 20px 15px 20px; "><p>'.__("Message was not sent. There were too many web links in it - makes it look like you are a spammer.",'nlcf').'</p></div>';
         }//end too many urls
         elseif(substr_count($_POST['contact_form_subject'], "http") > 0)
         {
-            $out.='<div style="background-color: #eaeaea; border: 1px solid #D5D5D5; border-radius:5px;font-family: arial,helvetica,sans-serif; font-size: 13px; line-height: 18px; margin-bottom: 20px; margin-top: 8px; padding: 15px 20px 15px 20px; "><p>Message was not sent. Web links in the subject is a pretty spammy thing to do.</p></div>';
+            $out.='<div style="background-color: #eaeaea; border: 1px solid #D5D5D5; border-radius:5px;font-family: arial,helvetica,sans-serif; font-size: 13px; line-height: 18px; margin-bottom: 20px; margin-top: 8px; padding: 15px 20px 15px 20px; "><p>'.__("Message was not sent. Web links in the subject is a pretty spammy thing to do.",'nlcf').'</p></div>';
         }
         elseif(substr_count($_POST['contact_form_name'], "http") > 0)
         {
-            $out.='<div style="background-color: #eaeaea; border: 1px solid #D5D5D5; border-radius:5px;font-family: arial,helvetica,sans-serif; font-size: 13px; line-height: 18px; margin-bottom: 20px; margin-top: 8px; padding: 15px 20px 15px 20px; "><p>Message was not sent. Web links as a name is extremely spammer like behaviour!</p></div>';
+            $out.='<div style="background-color: #eaeaea; border: 1px solid #D5D5D5; border-radius:5px;font-family: arial,helvetica,sans-serif; font-size: 13px; line-height: 18px; margin-bottom: 20px; margin-top: 8px; padding: 15px 20px 15px 20px; "><p>'.__("Message was not sent. Web links in the subject is a pretty spammy thing to do.",'nlcf').'</p></div>';
         }
         else
         {//reasonably happy it's not spam
@@ -93,13 +104,13 @@ function contact_form($widget=false)
                 if(!$check)
                 {
                     $wpdb->query('INSERT INTO '.CONT_TBL.' (name,email,subject,comment,post_date,ip)VALUES("'.$sql['contact_form_name'].'","'.$sql['contact_form_email'].'","'.$sql['contact_form_subject'].'","'.$sql['contact_form_comment'].'","'.date('Y-m-d H:i:s').'","'.esc_sql($_SERVER['REMOTE_ADDR']).'")');
-                    $out='<div style="background-color: #eaeaea; border: 1px solid #D5D5D5; border-radius:5px;font-family: arial,helvetica,sans-serif; font-size: 13px; line-height: 18px; margin-bottom: 20px; margin-top: 8px; padding: 15px 20px 15px 20px; "><p>Your message has been sent</p></div>';
+                    $out='<div style="background-color: #eaeaea; border: 1px solid #D5D5D5; border-radius:5px;font-family: arial,helvetica,sans-serif; font-size: 13px; line-height: 18px; margin-bottom: 20px; margin-top: 8px; padding: 15px 20px 15px 20px; "><p>'.__('Your message has been sent','nlcf').'</p></div>';
                     $to=get_option('admin_email');
                     $subject='Website Message';
-                    $message='<table><tr><td>Name:</td><td>'.esc_html($form['contact_form_name']).'</td></tr>';
-                    $message.='<tr><td>Email:</td><td>'.esc_html($form['contact_form_email']).'</td></tr>';
-                    $message.='<tr><td>IP Address:</td><td>'.esc_html($_SERVER['REMOTE_ADDR']).'</td></tr>';
-                    $message.='<tr><td>Message:</td><td>'.esc_html($form['contact_form_comment']).'</td></tr></table>';
+                    $message='<table><tr><td>'.__('Name','nlcf').':</td><td>'.esc_html($form['contact_form_name']).'</td></tr>';
+                    $message.='<tr><td>'.__('Email','nlcf').':</td><td>'.esc_html($form['contact_form_email']).'</td></tr>';
+                    $message.='<tr><td>'.__('IP Address','nlcf').':</td><td>'.esc_html($_SERVER['REMOTE_ADDR']).'</td></tr>';
+                    $message.='<tr><td>'.__('Message','nlcf').':</td><td>'.esc_html($form['contact_form_comment']).'</td></tr></table>';
                     add_filter('wp_mail_content_type',create_function('', 'return "text/html";'));
                     wp_mail($to,$subject,$message); 
                 }//not already in db
@@ -112,25 +123,25 @@ function contact_form($widget=false)
         $out='';
         if(!$widget){$out.='<div class="contact_form_wrap">';}else{$out.='<div class="contact_form_widget">';}
         $settings=get_option('contact_form_settings');
-        if(!empty($settings['address']))$out.='<p><img src="'.CONT_URL.'/Write.png" class="middle" width="24" height="24" alt="Write to..."/>'.esc_html($settings['address']).' </p>';
-        if(!empty($settings['phone']))$out.='<p><img src="'.CONT_URL.'/Phone.png" width="24" class="middle" height="24" alt="Phone us..."/> '.esc_html($settings['phone']).' </p>';
-        if(!empty($settings['email']))$out.='<p><img src="'.CONT_URL.'/Email.png" width="24" class="middle" height="24" alt="Email us..."/>'.esc_html($settings['email']).'</p>';
+        if(!empty($settings['address']))$out.='<p><img src="'.CONT_URL.'/Write.png" class="middle" width="24" height="24" alt="'.__('Write to','nlcf').'..."/>'.esc_html($settings['address']).' </p>';
+        if(!empty($settings['phone']))$out.='<p><img src="'.CONT_URL.'/Phone.png" width="24" class="middle" height="24" alt="'.__('Phone us','nlcf').'..."/> '.esc_html($settings['phone']).' </p>';
+        if(!empty($settings['email']))$out.='<p><img src="'.CONT_URL.'/Email.png" width="24" class="middle" height="24" alt="'.__('Email us','nlcf').'..."/>'.esc_html($settings['email']).'</p>';
                                 
         $out.='<form  action="'.get_permalink().'" method="post" >';
         $out.='<p><label for="contact_name">Name</label><input id="contact_name" class="text_input" type="text" name="contact_form_name"';
         if($id)$info=get_userdata($id);
         if($info)$out.=' value="'.$info->user_nicename.'" ';
         $out.='/></p>';
-        $out.='<p><label for="contact_email">Email</label><input type="text" id="contact_email" class="text_input" name="contact_form_email"';
+        $out.='<p><label for="contact_email">'.__('Email','nlcf').'</label><input type="text" id="contact_email" class="text_input" name="contact_form_email"';
         if($info)$out.=' value="'.$info->user_email.'" ';
         $out.='/></p>';
-        $out.='<p><label for="contact_subject">Subject</label><input type="text" id="contact_subject" class="text_input" name="contact_form_subject"';
+        $out.='<p><label for="contact_subject">'.__('Subject','nlcf').'</label><input type="text" id="contact_subject" class="text_input" name="contact_form_subject"';
         
         $out.='/></p>';
-        $out.='<p><label>Message</label><textarea  class="textarea" name="contact_form_comment"/></textarea></p>';
+        $out.='<p><label>'.__('Message','nlcf').'</label><textarea  class="textarea" name="contact_form_comment"/></textarea></p>';
         $out.=wp_nonce_field('contact_form_comment','contact_form_nonce',false);
-        $out.='<div class="never-loose-contact-form">Please enable javascript to leave message</div>';
-        $out.='<p><input type="hidden" name="save_contact_form_message" value="yes"/><input type="submit"  value="Send Message" class="button-primary"/></p></form>';
+        $out.='<div class="never-loose-contact-form">'.__('Please enable javascript to leave message','nlcf').'</div>';
+        $out.='<p><input type="hidden" name="save_contact_form_message" value="yes"/><input type="submit"  value="'.__('Send Message','nlcf').'" class="button-primary"/></p></form>';
         $out.='</div>';
     }//end form
     
@@ -169,20 +180,20 @@ function contact_form_settings()
     
     $settings=get_option('contact_form_settings');
         
-        echo'<h2>Settings</h2><p>If you would like the shortcode and/or widget to display your contact details above the email form, please fill in this form. If not leave it blank. Public contact form submission will be sent to your wordpress Admin Email contact</p><form action="" method="POST">';
-        echo'<p><label style="width:100px;float:left;">Address</label><input type="text" name="address" ';
+        echo'<p>'.__("If you would like the shortcode and/or widget to display your contact details above the email form, please fill in this form. If not leave it blank. Public contact form submission will be sent to your wordpress Admin Email contact",'nlcf').'</p><form action="" method="POST">';
+        echo'<p><label style="width:100px;float:left;">'.__('Address','nlcf').'</label><input type="text" name="address" ';
         if(!empty($settings['address']))echo' value="'.esc_html($settings['address']).'" ';
         echo'/></p>';
-        echo'<p><label style="width:100px;float:left;">Phone</label><input type="text" name="phone" ';
+        echo'<p><label style="width:100px;float:left;">'.__('Phone','nlcf').'</label><input type="text" name="phone" ';
         if(!empty($settings['phone']))echo' value="'.esc_html($settings['phone']).'" ';
         echo'/></p>';
-        echo'<p><label style="width:100px;float:left;">Email</label><input type="text" name="email" ';
+        echo'<p><label style="width:100px;float:left;">'.__('Email','nlcf').'</label><input type="text" name="email" ';
         if(!empty($settings['email']))echo' value="'.esc_html($settings['email']).'" ';
         echo'/></p>';
-        echo'<p><label style="width:100px;float:left;">Max URLs in message</label><input type="text" name="url" ';
+        echo'<p><label style="width:100px;float:left;">'.__('Max URLs in message','nlcf').'</label><input type="text" name="url" ';
         if(!empty($settings['url']))echo' value="'.esc_html($settings['url']).'" ';
         echo'/></p>';
-        echo'<p class="submit"><input type="hidden" name="save_contact_form_settings" value="yes" /><input type="submit" class="primary-button" value="Save Settings &raquo;"/></p></form>';
+        echo'<p class="submit"><input type="hidden" name="save_contact_form_settings" value="yes" /><input type="submit" class="primary-button" value="'.__('Save Settings','nlcf').' &raquo;"/></p></form>';
 }
 function contact_form_main()
 {
@@ -209,8 +220,8 @@ function contact_form_list()
 {
     
     global $wpdb;
-    echo'<h2>Contact Form Messages</h2><p>A plugin by <a href="http://wwww.themoyles.co.uk">Andy Moyle</a>&nbsp;<form class="right" action="https://www.paypal.com/cgi-bin/webscr" method="post"><input type="hidden" name="cmd" value="_s-xclick"><input type="hidden" name="hosted_button_id" value="R7YWSEHFXEU52"><input type="image"  src="https://www.paypal.com/en_GB/i/btn/btn_donate_LG.gif"  name="submit" alt="PayPal - The safer, easier way to pay online."><img alt=""  border="0" src="https://www.paypal.com/en_GB/i/scr/pixel.gif" width="1" height="1"></form></p>';
-    $table='<table class="widefat"><thead><tr><th>Delete</th><th>Date Posted</th><th>Name</th><th>Email</th><th>Comment</th><th>Read</th></tr></thead><tfoot><tr><th>Delete</th><th>Date Posted</th><th>Name</th><th>Email</th><th>Comment</th><th>Read</th></tr></tfoot></tbody>';
+    echo'<h2>'.__('Contact Form Messages','nlcf').'</h2><p>A plugin by <a href="http://wwww.themoyles.co.uk">Andy Moyle</a>&nbsp;<form class="right" action="https://www.paypal.com/cgi-bin/webscr" method="post"><input type="hidden" name="cmd" value="_s-xclick"><input type="hidden" name="hosted_button_id" value="R7YWSEHFXEU52"><input type="image"  src="https://www.paypal.com/en_GB/i/btn/btn_donate_LG.gif"  name="submit" alt="PayPal - The safer, easier way to pay online."><img alt=""  border="0" src="https://www.paypal.com/en_GB/i/scr/pixel.gif" width="1" height="1"></form></p>';
+    $table='<table class="widefat"><thead><tr><th>'.__('Delete','nlcf').'</th><th>'.__('Date Posted','nlcf').'</th><th>'.__('Name','nlcf').'</th><th>'.__('Email','nlcf').'</th><th>'.__('Comment','nlcf').'</th><th>'.__('Read','nlcf').'</th></tr></thead><tfoot><tr><th>'.__('Delete','nlcf').'</th><th>'.__('Date Posted','nlcf').'</th><th>'.__('Name','nlcf').'</th><th>'.__('Email','nlcf').'</th><th>'.__('Comment','nlcf').'</th><th>'.__('Read','nlcf').'</th></tr></tfoot></tbody>';
     $results=$wpdb->get_results('SELECT * FROM '.CONT_TBL.'  ORDER BY post_date DESC');
     
     if($results)
@@ -219,7 +230,7 @@ function contact_form_list()
         {
             if($row->read=='0000-00-00 00:00:00'){$class=' class="contact_read" ';}else{$class='';}
             $delete='<a href="'.wp_nonce_url('admin.php?page=contact_form/index.php&amp;action=delete_comment&amp;id='.$row->id,'delete_comment').'">Delete</a>';
-            $read='<input alt="#TB_inline?height=300&width=600&inlineId=message'.$row->id.'" title="Reply" class="thickbox" value="View complete message" type="button" id="message'.$reply->id.'"/> <div id="message'.$row->id.'" style="display:none" ><h2>Message from '.$row->name.'</h2><p>Posted:'.mysql2date('d M Y H:i',$row->post_date).'</p><p>From:<a href="mailto:'.$row->email.'">'.$row->email.'</a></p><p>Subject: '.$row->subject.'</p><p>'.$row->comment.'</p></div>';
+            $read='<input alt="#TB_inline?height=300&width=600&inlineId=message'.$row->id.'" title="Reply" class="thickbox" value="'.__('View complete message','nlcf').'" type="button" id="message'.$reply->id.'"/> <div id="message'.$row->id.'" style="display:none" ><h2>'.__('Message from','nlcf').' '.$row->name.'</h2><p>'.__('Posted','nlcf').':'.mysql2date('d M Y H:i',$row->post_date).'</p><p>'.__('From','nlcf').':<a href="mailto:'.$row->email.'">'.$row->email.'</a></p><p>'.__('Subject','nlcf').': '.$row->subject.'</p><p>'.$row->comment.'</p></div>';
         
             $table.='<tr '.$class.'><td>'.$delete.'</td><td>'.mysql2date('d M Y H:i',$row->post_date).'</td><td>'.$row->name.'</td><td><a href="mailto:'.$row->email.'">'.$row->email.'<a></td><td>'.contact_form_truncate($row->comment,75,'... ').'</td><td>'.$read.'</td></tr>';
         }
