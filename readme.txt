@@ -4,7 +4,7 @@ Donate link:
 Tags: contact form, anti-spam, email, database
 Requires at least: 3.3
 Tested up to: 3.5
-Stable tag: 0.3
+Stable tag: 0.31
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -37,6 +37,7 @@ Emails are sent to your installation admin email address.
 * 0.2 Spam proofing without Akismet
 * 0.21 Clearer settings form (you don't have to display your contact details publicly)
 * 0.3 Added Internationalisation
+* 0.31 Only show admin bar menu to administrators
 
 == Upgrade notice ==
 

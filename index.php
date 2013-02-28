@@ -4,7 +4,7 @@ Plugin Name: Never Loose Contact Form
 Plugin URI: 
 Description: Simple to use spam free contact form using simple checkbox captcha, saving messages to database and emailing your admin contact
 Author: Andy Moyle
-Version: 0.3
+Version: 0.31
 Author URI: http://www.themoyles.co.uk/web-development/contact-form-plugin/
 */
 if (!function_exists ('add_action')):
@@ -41,14 +41,16 @@ function nlcf_loc_setup(){
 add_action('plugins_loaded', 'nlcf_loc_setup');
 // Admin Bar Customisation
 function contact_form_admin_bar_render() {
- global $wp_admin_bar,$wpdb;
- $sql='SELECT Count(*) FROM '.CONT_TBL.' WHERE DATE(post_date)=CURDATE()';
- $count=$wpdb->get_var($sql);
- // Add a new top level menu link
- // Here we add a customer support URL link
- $wp_admin_bar->add_menu( array('parent' => false, 'id' => 'contact form', 'title' => __('Contact Form ','nlcf'). $count.' '.__('Today','nlcf'), 'href' => admin_url().'admin.php?page=contact_form/index.php' ));
- $wp_admin_bar->add_menu(array('parent' => 'contact_form','id' => 'contact_form_settings', 'title' => __('Settings','nlcf'), 'href' => admin_url().'admin.php?page=contact_form/index.php&action=contact_form_settings' ));
-
+ global $wp_admin_bar,$wpdb,$current_user;
+ if(current_user_can('manage_options'))
+ {
+    $sql='SELECT Count(*) FROM '.CONT_TBL.' WHERE DATE(post_date)=CURDATE()';
+    $count=$wpdb->get_var($sql);
+    // Add a new top level menu link
+    // Here we add a customer support URL link
+    $wp_admin_bar->add_menu( array('parent' => false, 'id' => 'contact form', 'title' => __('Contact Form ','nlcf'). $count.' '.__('Today','nlcf'), 'href' => admin_url().'admin.php?page=contact_form/index.php' ));
+    $wp_admin_bar->add_menu(array('parent' => 'contact_form','id' => 'contact_form_settings', 'title' => __('Settings','nlcf'), 'href' => admin_url().'admin.php?page=contact_form/index.php&action=contact_form_settings' ));
+ }
 }
 
 // Finally we add our hook function
