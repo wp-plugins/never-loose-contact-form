@@ -4,7 +4,7 @@ Plugin Name: Never Loose Contact Form
 Plugin URI: 
 Description: Simple to use spam free contact form using simple checkbox captcha, saving messages to database and emailing your admin contact
 Author: Andy Moyle
-Version: 0.31
+Version: 0.32
 Author URI: http://www.themoyles.co.uk/web-development/contact-form-plugin/
 */
 if (!function_exists ('add_action')):
@@ -14,19 +14,30 @@ if (!function_exists ('add_action')):
 endif;
 define('CONT_TBL',$table_prefix.'contact_form');
 define('CONT_URL',WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__)));
-
+add_action('init','contact_form_install');
 function contact_form_install()
 {
-    global $wpdb;
-    $wpdb->show_errors();
- 
-    $wpdb->query('CREATE TABLE IF NOT EXISTS '.CONT_TBL.' (`name` text NOT NULL,`comment` text NOT NULL,`subject` text NOT NULL, `email` text NOT NULL,`post_date` datetime NOT NULL,`read` datetime NOT NULL DEFAULT "0000-00-00 00:00:00",`id` int(11) NOT NULL AUTO_INCREMENT, PRIMARY KEY (`id`)) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;');
-    if($wpdb->get_var('SHOW COLUMNS FROM '.CONT_TBL.' LIKE "ip"')!='ip')
+    global $wpdb, $never_loose_contact_settings;
+    $never_loose_contact_settings=get_option('never_loose_contact_form_settings');
+    if(empty($never_loose_contact_settings)||$never_loose_contact_settings['version']<'0.32')
     {
-        $wpdb->query('ALTER TABLE '.CONT_TBL.' ADD `ip` TEXT NOT NULL');
+        //copy old settings to never_loose_contact_settings and get rid of old settings 
+        $old_settings=get_option('contact_form_settings');
+        if($old_settings)
+        {
+            $never_loose_contact_settings=$old_settings;
+            delete_option('contact_form_settings');
+        }
+        $never_loose_contact_settings['version']=0.32;//current version number
+        update_option('never_loose_contact_form_settings',$never_loose_contact_settings);
+        $wpdb->query('CREATE TABLE IF NOT EXISTS '.CONT_TBL.' (`name` text NOT NULL,`comment` text NOT NULL,`subject` text NOT NULL, `email` text NOT NULL,`post_date` datetime NOT NULL,`read` datetime NOT NULL DEFAULT "0000-00-00 00:00:00",`id` int(11) NOT NULL AUTO_INCREMENT, PRIMARY KEY (`id`)) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;');
+        if($wpdb->get_var('SHOW COLUMNS FROM '.CONT_TBL.' LIKE "ip"')!='ip')
+        {
+            $wpdb->query('ALTER TABLE '.CONT_TBL.' ADD `ip` TEXT NOT NULL');
+        }
     }
 }
-contact_form_install();
+
 //add localisation
 $nlcf_translator_domain   = 'nlcf';
 $nlcf_is_setup = 0;
@@ -41,7 +52,7 @@ function nlcf_loc_setup(){
 add_action('plugins_loaded', 'nlcf_loc_setup');
 // Admin Bar Customisation
 function contact_form_admin_bar_render() {
- global $wp_admin_bar,$wpdb,$current_user;
+ global $wp_admin_bar,$wpdb,$current_user,$never_loose_contact_settings;
  if(current_user_can('manage_options'))
  {
     $sql='SELECT Count(*) FROM '.CONT_TBL.' WHERE DATE(post_date)=CURDATE()';
@@ -73,8 +84,8 @@ function contact_form_shortcode($atts, $content = null)
 
 function contact_form($widget=false)
 {
-    $settings=get_option('contact_form_settings');
-    global $wpdb;
+    
+    global $wpdb,$never_loose_contact_settings;
     $out='';
     $id=get_current_user_id();
     if(!empty($_POST['save_contact_form_message'])&&!empty($_POST['contact_form_comment']) &&!empty($_POST['contact_form_email'])&&!empty($_POST['contact_form_name'])&& wp_verify_nonce($_POST['contact_form_nonce'],'contact_form_comment'))
@@ -125,9 +136,9 @@ function contact_form($widget=false)
         $out='';
         if(!$widget){$out.='<div class="contact_form_wrap">';}else{$out.='<div class="contact_form_widget">';}
         $settings=get_option('contact_form_settings');
-        if(!empty($settings['address']))$out.='<p><img src="'.CONT_URL.'/Write.png" class="middle" width="24" height="24" alt="'.__('Write to','nlcf').'..."/>'.esc_html($settings['address']).' </p>';
-        if(!empty($settings['phone']))$out.='<p><img src="'.CONT_URL.'/Phone.png" width="24" class="middle" height="24" alt="'.__('Phone us','nlcf').'..."/> '.esc_html($settings['phone']).' </p>';
-        if(!empty($settings['email']))$out.='<p><img src="'.CONT_URL.'/Email.png" width="24" class="middle" height="24" alt="'.__('Email us','nlcf').'..."/>'.esc_html($settings['email']).'</p>';
+        if(!empty($never_loose_contact_settings['address']))$out.='<p><img src="'.CONT_URL.'/Write.png" class="middle" width="24" height="24" alt="'.__('Write to','nlcf').'..."/>'.esc_html($settings['address']).' </p>';
+        if(!empty($never_loose_contact_settings['phone']))$out.='<p><img src="'.CONT_URL.'/Phone.png" width="24" class="middle" height="24" alt="'.__('Phone us','nlcf').'..."/> '.esc_html($settings['phone']).' </p>';
+        if(!empty($never_loose_contact_settings['email']))$out.='<p><img src="'.CONT_URL.'/Email.png" width="24" class="middle" height="24" alt="'.__('Email us','nlcf').'..."/>'.esc_html($settings['email']).'</p>';
                                 
         $out.='<form  action="'.get_permalink().'" method="post" >';
         $out.='<p><label for="contact_name">Name</label><input id="contact_name" class="text_input" type="text" name="contact_form_name"';
@@ -168,7 +179,7 @@ function contact_form_admin_menus()
 //End Admin Menu
 function contact_form_settings()
 {
-    
+    global $never_loose_contact_settings;
     echo'<h2>Settings</h2>';
     if(!empty($_POST['save_contact_form_settings']))
     {
@@ -180,20 +191,20 @@ function contact_form_settings()
     
     }
     
-    $settings=get_option('contact_form_settings');
+    
         
         echo'<p>'.__("If you would like the shortcode and/or widget to display your contact details above the email form, please fill in this form. If not leave it blank. Public contact form submission will be sent to your wordpress Admin Email contact",'nlcf').'</p><form action="" method="POST">';
         echo'<p><label style="width:100px;float:left;">'.__('Address','nlcf').'</label><input type="text" name="address" ';
-        if(!empty($settings['address']))echo' value="'.esc_html($settings['address']).'" ';
+        if(!empty($never_loose_contact_settings['address']))echo' value="'.esc_html($settings['address']).'" ';
         echo'/></p>';
         echo'<p><label style="width:100px;float:left;">'.__('Phone','nlcf').'</label><input type="text" name="phone" ';
-        if(!empty($settings['phone']))echo' value="'.esc_html($settings['phone']).'" ';
+        if(!empty($never_loose_contact_settings['phone']))echo' value="'.esc_html($settings['phone']).'" ';
         echo'/></p>';
         echo'<p><label style="width:100px;float:left;">'.__('Email','nlcf').'</label><input type="text" name="email" ';
-        if(!empty($settings['email']))echo' value="'.esc_html($settings['email']).'" ';
+        if(!empty($never_loose_contact_settings['email']))echo' value="'.esc_html($settings['email']).'" ';
         echo'/></p>';
         echo'<p><label style="width:100px;float:left;">'.__('Max URLs in message','nlcf').'</label><input type="text" name="url" ';
-        if(!empty($settings['url']))echo' value="'.esc_html($settings['url']).'" ';
+        if(!empty($never_loose_contact_settings['url']))echo' value="'.esc_html($settings['url']).'" ';
         echo'/></p>';
         echo'<p class="submit"><input type="hidden" name="save_contact_form_settings" value="yes" /><input type="submit" class="primary-button" value="'.__('Save Settings','nlcf').' &raquo;"/></p></form>';
 }
@@ -221,7 +232,7 @@ wp_enqueue_script('thickbox');
 function contact_form_list()
 {
     
-    global $wpdb;
+    global $wpdb,$never_loose_contact_settings;
     echo'<h2>'.__('Contact Form Messages','nlcf').'</h2><p>A plugin by <a href="http://wwww.themoyles.co.uk">Andy Moyle</a>&nbsp;<form class="right" action="https://www.paypal.com/cgi-bin/webscr" method="post"><input type="hidden" name="cmd" value="_s-xclick"><input type="hidden" name="hosted_button_id" value="R7YWSEHFXEU52"><input type="image"  src="https://www.paypal.com/en_GB/i/btn/btn_donate_LG.gif"  name="submit" alt="PayPal - The safer, easier way to pay online."><img alt=""  border="0" src="https://www.paypal.com/en_GB/i/scr/pixel.gif" width="1" height="1"></form></p>';
     $table='<table class="widefat"><thead><tr><th>'.__('Delete','nlcf').'</th><th>'.__('Date Posted','nlcf').'</th><th>'.__('Name','nlcf').'</th><th>'.__('Email','nlcf').'</th><th>'.__('Comment','nlcf').'</th><th>'.__('Read','nlcf').'</th></tr></thead><tfoot><tr><th>'.__('Delete','nlcf').'</th><th>'.__('Date Posted','nlcf').'</th><th>'.__('Name','nlcf').'</th><th>'.__('Email','nlcf').'</th><th>'.__('Comment','nlcf').'</th><th>'.__('Read','nlcf').'</th></tr></tfoot></tbody>';
     $results=$wpdb->get_results('SELECT * FROM '.CONT_TBL.'  ORDER BY post_date DESC');
