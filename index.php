@@ -2,7 +2,7 @@
 /*
 Plugin Name: Never Loose Contact Form
 Plugin URI: 
-Description: Simple to use spam free contact form using simple checkbox captcha, saving messages to database and emailing your admin contact
+Description: Simple to use spam free contact form using simple checkbox captcha, saving messages to database and emailing your admin contact. Use shortcode [contact_form] or widget
 Author: Andy Moyle
 Version: 0.32
 Author URI: http://www.themoyles.co.uk/web-development/contact-form-plugin/
@@ -142,11 +142,11 @@ function contact_form($widget=false)
                                 
         $out.='<form  action="'.get_permalink().'" method="post" >';
         $out.='<p><label for="contact_name">Name</label><input id="contact_name" class="text_input" type="text" name="contact_form_name"';
-        if($id)$info=get_userdata($id);
-        if($info)$out.=' value="'.$info->user_nicename.'" ';
+        if(!empty($id))$info=get_userdata($id);
+        if(!empty($info))$out.=' value="'.$info->user_nicename.'" ';
         $out.='/></p>';
         $out.='<p><label for="contact_email">'.__('Email','nlcf').'</label><input type="text" id="contact_email" class="text_input" name="contact_form_email"';
-        if($info)$out.=' value="'.$info->user_email.'" ';
+        if(!empty($info))$out.=' value="'.$info->user_email.'" ';
         $out.='/></p>';
         $out.='<p><label for="contact_subject">'.__('Subject','nlcf').'</label><input type="text" id="contact_subject" class="text_input" name="contact_form_subject"';
         
@@ -192,7 +192,7 @@ function contact_form_settings()
     }
     
     
-        
+        echo'<h2>Never Loose Contact Form Plugin</h2><p>Sends your messages to the admin email conrtact and stores tehm in a database for you. Please use the widget or shortcode [contact_form] in a post or page.</p>';
         echo'<p>'.__("If you would like the shortcode and/or widget to display your contact details above the email form, please fill in this form. If not leave it blank. Public contact form submission will be sent to your wordpress Admin Email contact",'nlcf').'</p><form action="" method="POST">';
         echo'<p><label style="width:100px;float:left;">'.__('Address','nlcf').'</label><input type="text" name="address" ';
         if(!empty($never_loose_contact_settings['address']))echo' value="'.esc_html($settings['address']).'" ';
