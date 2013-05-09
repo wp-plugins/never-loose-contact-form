@@ -2,9 +2,9 @@
 /*
 Plugin Name: Never Loose Contact Form
 Plugin URI: 
-Description: Simple to use spam free contact form using simple checkbox captcha, saving messages to database and emailing your admin contact. Use shortcode [contact_form] or widget
+Description: Simple to use spam free contact form using simple checkbox captcha, saving messages to database and emailing your admin contact
 Author: Andy Moyle
-Version: 0.33
+Version: 0.34
 Author URI: http://www.themoyles.co.uk/web-development/contact-form-plugin/
 */
 if (!function_exists ('add_action')):
@@ -12,13 +12,8 @@ if (!function_exists ('add_action')):
     header('HTTP/1.1 403 Forbidden');
     exit();
 endif;
-nlcf_constants();
-function nlcf_constants()
-{
-    global $wpdb;
-    define('CONT_TBL',$wpdb->prefix.'contact_form');
-    define('CONT_URL',WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__)));
-}
+define('CONT_TBL',$table_prefix.'contact_form');
+define('CONT_URL',WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__)));
 add_action('init','contact_form_install');
 function contact_form_install()
 {
@@ -55,31 +50,6 @@ function nlcf_loc_setup(){
   $nlcf_translator_is_setup = 1;
 }
 add_action('plugins_loaded', 'nlcf_loc_setup');
-//inline css
-add_action( 'wp_head', 'nlcf_css' );
-function nlcf_css()
-{
-    ?>
-    <style>.contact_form_reply{font-style:italic;padding-left:50px}
-.admin_contact_form{border:1px solid #900;border-radius:10px;width:250px}
-.middle{vertical-align:middle;padding-right:10px}
-.nlcf-wrap label{width:150px;float:left}
-.nlcf-wrap input[type=text]{width:300px}
-.nlcf-wrap textarea{width:450px;height:300px}
-.nlcf-wrap .button-primary,.nlcf-widget .button-primary{background:#21759B;border-radius:10px;color:#FFF;font-weight:700;text-shadow:0 -1px 0 rgba(0,0,0,0.3);border-color:#298CBA}
-.nlcf-widget label{float:left;width:65px}
-.nlcf-widget img{vertical-align:middle}
-.nlcf-widget input[type=text]{width:190px}
-.nlcf-widget textarea{width:190px;height:50px}
-.nlcf-wrap,.nlcf-widget{margin-bottom:5px}</style>
-    <?php
-}
-
-//end inline css
-
-
-
-
 // Admin Bar Customisation
 function contact_form_admin_bar_render() {
  global $wp_admin_bar,$wpdb,$current_user,$never_loose_contact_settings;
@@ -97,9 +67,10 @@ function contact_form_admin_bar_render() {
 // Finally we add our hook function
 add_action( 'wp_before_admin_bar_render', 'contact_form_admin_bar_render' );
 //front_end
-add_action('wp_head','contact_form_script');
-function contact_form_script()
+add_action('wp_head','contact_form_css');
+function contact_form_css()
 {
+    wp_enqueue_style('contact_form_css',WP_PLUGIN_URL.'/never-loose-contact-form/contact-form.css');
     wp_enqueue_script('jquery');
     wp_enqueue_script('nlcf_js',WP_PLUGIN_URL.'/never-loose-contact-form/nlcf.js');
 }
@@ -163,7 +134,7 @@ function contact_form($widget=false)
     else
     {//form
         $out='';
-        if(!$widget){$out.='<div class="nlcf-wrap">';}else{$out.='<div class="nlcf-widget">';}
+        if(!$widget){$out.='<div class="contact_form_wrap">';}else{$out.='<div class="contact_form_widget">';}
         $settings=get_option('contact_form_settings');
         if(!empty($never_loose_contact_settings['address']))$out.='<p><img src="'.CONT_URL.'/Write.png" class="middle" width="24" height="24" alt="'.__('Write to','nlcf').'..."/>'.esc_html($settings['address']).' </p>';
         if(!empty($never_loose_contact_settings['phone']))$out.='<p><img src="'.CONT_URL.'/Phone.png" width="24" class="middle" height="24" alt="'.__('Phone us','nlcf').'..."/> '.esc_html($settings['phone']).' </p>';
@@ -171,11 +142,11 @@ function contact_form($widget=false)
                                 
         $out.='<form  action="'.get_permalink().'" method="post" >';
         $out.='<p><label for="contact_name">Name</label><input id="contact_name" class="text_input" type="text" name="contact_form_name"';
-        if(!empty($id))$info=get_userdata($id);
-        if(!empty($info))$out.=' value="'.$info->user_nicename.'" ';
+        if($id)$info=get_userdata($id);
+        if($info)$out.=' value="'.$info->user_nicename.'" ';
         $out.='/></p>';
         $out.='<p><label for="contact_email">'.__('Email','nlcf').'</label><input type="text" id="contact_email" class="text_input" name="contact_form_email"';
-        if(!empty($info))$out.=' value="'.$info->user_email.'" ';
+        if($info)$out.=' value="'.$info->user_email.'" ';
         $out.='/></p>';
         $out.='<p><label for="contact_subject">'.__('Subject','nlcf').'</label><input type="text" id="contact_subject" class="text_input" name="contact_form_subject"';
         
@@ -221,7 +192,7 @@ function contact_form_settings()
     }
     
     
-        echo'<h2>Never Loose Contact Form Plugin</h2><p>Sends your messages to the admin email contact and stores tehm in a database for you. Please use the widget or shortcode [contact_form] in a post or page.</p>';
+        
         echo'<p>'.__("If you would like the shortcode and/or widget to display your contact details above the email form, please fill in this form. If not leave it blank. Public contact form submission will be sent to your wordpress Admin Email contact",'nlcf').'</p><form action="" method="POST">';
         echo'<p><label style="width:100px;float:left;">'.__('Address','nlcf').'</label><input type="text" name="address" ';
         if(!empty($never_loose_contact_settings['address']))echo' value="'.esc_html($settings['address']).'" ';
@@ -272,7 +243,7 @@ function contact_form_list()
         {
             if($row->read=='0000-00-00 00:00:00'){$class=' class="contact_read" ';}else{$class='';}
             $delete='<a href="'.wp_nonce_url('admin.php?page=contact_form/index.php&amp;action=delete_comment&amp;id='.$row->id,'delete_comment').'">Delete</a>';
-            $read='<input alt="#TB_inline?height=300&width=600&inlineId=message'.$row->id.'" title="Reply" class="thickbox" value="'.__('View complete message','nlcf').'" type="button" id="message'.$row->id.'"/> <div id="message'.$row->id.'" style="display:none" ><h2>'.__('Message from','nlcf').' '.$row->name.'</h2><p>'.__('Posted','nlcf').':'.mysql2date('d M Y H:i',$row->post_date).'</p><p>'.__('From','nlcf').':<a href="mailto:'.$row->email.'">'.$row->email.'</a></p><p>'.__('Subject','nlcf').': '.$row->subject.'</p><p>'.$row->comment.'</p></div>';
+            $read='<input alt="#TB_inline?height=300&width=600&inlineId=message'.$row->id.'" title="Reply" class="thickbox" value="'.__('View complete message','nlcf').'" type="button" /> <div id="message'.$row->id.'" style="display:none" ><h2>'.__('Message from','nlcf').' '.$row->name.'</h2><p>'.__('Posted','nlcf').':'.mysql2date('d M Y H:i',$row->post_date).'</p><p>'.__('From','nlcf').':<a href="mailto:'.$row->email.'">'.$row->email.'</a></p><p>'.__('Subject','nlcf').': '.$row->subject.'</p><p>'.$row->comment.'</p></div>';
         
             $table.='<tr '.$class.'><td>'.$delete.'</td><td>'.mysql2date('d M Y H:i',$row->post_date).'</td><td>'.$row->name.'</td><td><a href="mailto:'.$row->email.'">'.$row->email.'<a></td><td>'.contact_form_truncate($row->comment,75,'... ').'</td><td>'.$read.'</td></tr>';
         }
@@ -318,7 +289,7 @@ function contact_form_delete_comment($id)
 //end back end
 
 //widget
-function nlcf_widget($args)
+function contact_form_widget($args)
 {
     global $wpdb;
     $wpdb->show_errors();
@@ -332,12 +303,11 @@ function nlcf_widget($args)
     echo contact_form($widget=true);
     echo $after_widget;
 }
-function nlcf_widget_init()
+function contact_form_widget_init()
 {
-    wp_register_sidebar_widget('Contact Form','Contact Form','nlcf_widget');
+    wp_register_sidebar_widget('Contact Form','Contact Form','contact_form_widget');
     
     
 }
-add_action('init','nlcf_widget_init');
+add_action('init','contact_form_widget_init');
 //end widget
-?>
