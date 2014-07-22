@@ -5,11 +5,7 @@
 .contact_form_wrap label{width:150px; float:left;}
 .contact_form_wrap input[type="text"]{width:300px;}
 .contact_form_wrap textarea{width:450px;height:300px;}
- .contact_form_wrap .button-primary, .contact_form_widget .button-primary{background: #21759B;
-    border-color: #298CBA;border-radius:10px;
-    color: #FFFFFF;
-    font-weight: bold;
-    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);}
+
 .contact_form_widget label{float:left;width:65px;}
 .contact_form_widget img{vertical-align:middle;}
 .contact-form_widget input[type="text"]{width:190px;}

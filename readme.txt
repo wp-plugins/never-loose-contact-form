@@ -4,7 +4,7 @@ Donate link:
 Tags: contact form, anti-spam, email, database
 Requires at least: 3.3
 Tested up to: 3.5
-Stable tag: 0.34
+Stable tag: 0.40
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -41,6 +41,7 @@ Emails are sent to your installation admin email address.
 * 0.32 More efficient on db calls on initialise
 * 0.33 Fixed activation error
 * 0.34 Fixed thickbox
+* 0.40 HTML5 validation, hitting reply in email client replies to message sender
 == Upgrade notice ==
 
 

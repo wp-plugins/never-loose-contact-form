@@ -4,7 +4,7 @@ Plugin Name: Never Loose Contact Form
 Plugin URI: 
 Description: Simple to use spam free contact form using simple checkbox captcha, saving messages to database and emailing your admin contact
 Author: Andy Moyle
-Version: 0.34
+Version: 0.40
 Author URI: http://www.themoyles.co.uk/web-development/contact-form-plugin/
 */
 if (!function_exists ('add_action')):
@@ -12,6 +12,7 @@ if (!function_exists ('add_action')):
     header('HTTP/1.1 403 Forbidden');
     exit();
 endif;
+$never_loose_contact_settings=maybe_unserialize(get_option('never_loose_contact_form_settings'));
 define('CONT_TBL',$table_prefix.'contact_form');
 define('CONT_URL',WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__)));
 add_action('init','contact_form_install');
@@ -19,7 +20,7 @@ function contact_form_install()
 {
     global $wpdb, $never_loose_contact_settings;
     $never_loose_contact_settings=get_option('never_loose_contact_form_settings');
-    if(empty($never_loose_contact_settings)||$never_loose_contact_settings['version']<'0.32')
+    if(empty($never_loose_contact_settings))
     {
         //copy old settings to never_loose_contact_settings and get rid of old settings 
         $old_settings=get_option('contact_form_settings');
@@ -67,7 +68,7 @@ function contact_form_admin_bar_render() {
 // Finally we add our hook function
 add_action( 'wp_before_admin_bar_render', 'contact_form_admin_bar_render' );
 //front_end
-add_action('wp_head','contact_form_css');
+add_action('wp_enqueue_scripts','contact_form_css');
 function contact_form_css()
 {
     wp_enqueue_style('contact_form_css',WP_PLUGIN_URL.'/never-loose-contact-form/contact-form.css');
@@ -120,12 +121,14 @@ function contact_form($widget=false)
                     $out='<div style="background-color: #eaeaea; border: 1px solid #D5D5D5; border-radius:5px;font-family: arial,helvetica,sans-serif; font-size: 13px; line-height: 18px; margin-bottom: 20px; margin-top: 8px; padding: 15px 20px 15px 20px; "><p>'.__('Your message has been sent','nlcf').'</p></div>';
                     $to=get_option('admin_email');
                     $subject='Website Message';
+					$headers='From: '.esc_html($form['contact_form_name']).' <'.esc_html($form['contact_form_email']).'>';
                     $message='<table><tr><td>'.__('Name','nlcf').':</td><td>'.esc_html($form['contact_form_name']).'</td></tr>';
                     $message.='<tr><td>'.__('Email','nlcf').':</td><td>'.esc_html($form['contact_form_email']).'</td></tr>';
                     $message.='<tr><td>'.__('IP Address','nlcf').':</td><td>'.esc_html($_SERVER['REMOTE_ADDR']).'</td></tr>';
                     $message.='<tr><td>'.__('Message','nlcf').':</td><td>'.esc_html($form['contact_form_comment']).'</td></tr></table>';
                     add_filter('wp_mail_content_type',create_function('', 'return "text/html";'));
-                    wp_mail($to,$subject,$message); 
+                    wp_mail($to,$subject,$message,$headers); 
+					remove_filter( 'wp_mail_content_type', 'set_html_content_type' );
                 }//not already in db
         }//not spam
        
@@ -135,10 +138,10 @@ function contact_form($widget=false)
     {//form
         $out='';
         if(!$widget){$out.='<div class="contact_form_wrap">';}else{$out.='<div class="contact_form_widget">';}
-        $settings=get_option('contact_form_settings');
-        if(!empty($never_loose_contact_settings['address']))$out.='<p><img src="'.CONT_URL.'/Write.png" class="middle" width="24" height="24" alt="'.__('Write to','nlcf').'..."/>'.esc_html($settings['address']).' </p>';
-        if(!empty($never_loose_contact_settings['phone']))$out.='<p><img src="'.CONT_URL.'/Phone.png" width="24" class="middle" height="24" alt="'.__('Phone us','nlcf').'..."/> '.esc_html($settings['phone']).' </p>';
-        if(!empty($never_loose_contact_settings['email']))$out.='<p><img src="'.CONT_URL.'/Email.png" width="24" class="middle" height="24" alt="'.__('Email us','nlcf').'..."/>'.esc_html($settings['email']).'</p>';
+        $never_loose_contact_settings=maybe_unserialize(get_option('never_loose_contact_form_settings'));
+        if(!empty($never_loose_contact_settings['address']))$out.='<p><img src="'.CONT_URL.'Write.png" class="middle" width="24" height="24" alt="'.__('Write to','nlcf').'..."/>'.esc_html($never_loose_contact_settings['address']).' </p>';
+        if(!empty($never_loose_contact_settings['phone']))$out.='<p><img src="'.CONT_URL.'Phone.png" width="24" class="middle" height="24" alt="'.__('Phone us','nlcf').'..."/> '.esc_html($never_loose_contact_settings['phone']).' </p>';
+        if(!empty($never_loose_contact_settings['email']))$out.='<p><img src="'.CONT_URL.'Email.png" width="24" class="middle" height="24" alt="'.__('Email us','nlcf').'..."/>'.esc_html($never_loose_contact_settings['email']).'</p>';
                                 
         $out.='<form  action="'.get_permalink().'" method="post" >';
         $out.='<p><label for="contact_name">Name</label><input id="contact_name" class="text_input" type="text" name="contact_form_name"';
@@ -151,10 +154,10 @@ function contact_form($widget=false)
         $out.='<p><label for="contact_subject">'.__('Subject','nlcf').'</label><input type="text" id="contact_subject" class="text_input" name="contact_form_subject"';
         
         $out.='/></p>';
-        $out.='<p><label>'.__('Message','nlcf').'</label><textarea  class="textarea" name="contact_form_comment"/></textarea></p>';
-        $out.=wp_nonce_field('contact_form_comment','contact_form_nonce',false);
+        $out.='<p><label>'.__('Message','nlcf').'</label><textarea  class="textarea" name="contact_form_comment"></textarea></p>';
+        $out.=str_replace('id="contact_form_nonce"','',wp_nonce_field('contact_form_comment','contact_form_nonce',false));
         $out.='<div class="never-loose-contact-form">'.__('Please enable javascript to leave message','nlcf').'</div>';
-        $out.='<p><input type="hidden" name="save_contact_form_message" value="yes"/><input type="submit"  value="'.__('Send Message','nlcf').'" class="button-primary"/></p></form>';
+        $out.='<p><input type="hidden" name="save_contact_form_message" value="yes"/><input type="submit"  value="'.__('Send Message','nlcf').'" class="button"/></p></form>';
         $out.='</div>';
     }//end form
     
@@ -179,32 +182,37 @@ function contact_form_admin_menus()
 //End Admin Menu
 function contact_form_settings()
 {
-    global $never_loose_contact_settings;
+     
     echo'<h2>Settings</h2>';
     if(!empty($_POST['save_contact_form_settings']))
     {
         $form=array();
         foreach($_POST AS $key=>$value)$form[$key]=stripslashes($value);
-        update_option('contact_form_settings',array('phone'=>$form['phone'],'address'=>$form['address'],'email'=>$form['email'],'url'=>(int)$form['url']));
+		$new_settings=serialize(array('phone'=>$form['phone'],'address'=>$form['address'],'email'=>$form['email'],'url'=>(int)$form['url']));
+		var_dump($new_settings);
+		
+        update_option('never_loose_contact_form_settings',$new_settings);
+		
         echo'<div class="updated fade"><p><strong>Settings Updated</strong></p></div>';
         echo'<form class="right" action="https://www.paypal.com/cgi-bin/webscr" method="post"><input type="hidden" name="cmd" value="_s-xclick"><input type="hidden" name="hosted_button_id" value="R7YWSEHFXEU52"><input type="image"  src="https://www.paypal.com/en_GB/i/btn/btn_donate_LG.gif"  name="submit" alt="PayPal - The safer, easier way to pay online."><img alt=""  border="0" src="https://www.paypal.com/en_GB/i/scr/pixel.gif" width="1" height="1"></form>';
     
     }
     
     
-        
+        $never_loose_contact_settings=maybe_unserialize(get_option('never_loose_contact_form_settings'));
+		
         echo'<p>'.__("If you would like the shortcode and/or widget to display your contact details above the email form, please fill in this form. If not leave it blank. Public contact form submission will be sent to your wordpress Admin Email contact",'nlcf').'</p><form action="" method="POST">';
         echo'<p><label style="width:100px;float:left;">'.__('Address','nlcf').'</label><input type="text" name="address" ';
-        if(!empty($never_loose_contact_settings['address']))echo' value="'.esc_html($settings['address']).'" ';
+        if(!empty($never_loose_contact_settings['address']))echo' value="'.esc_html($never_loose_contact_settings['address']).'" ';
         echo'/></p>';
         echo'<p><label style="width:100px;float:left;">'.__('Phone','nlcf').'</label><input type="text" name="phone" ';
-        if(!empty($never_loose_contact_settings['phone']))echo' value="'.esc_html($settings['phone']).'" ';
+        if(!empty($never_loose_contact_settings['phone']))echo' value="'.esc_html($never_loose_contact_settings['phone']).'" ';
         echo'/></p>';
         echo'<p><label style="width:100px;float:left;">'.__('Email','nlcf').'</label><input type="text" name="email" ';
-        if(!empty($never_loose_contact_settings['email']))echo' value="'.esc_html($settings['email']).'" ';
+        if(!empty($never_loose_contact_settings['email']))echo' value="'.esc_html($never_loose_contact_settings['email']).'" ';
         echo'/></p>';
         echo'<p><label style="width:100px;float:left;">'.__('Max URLs in message','nlcf').'</label><input type="text" name="url" ';
-        if(!empty($never_loose_contact_settings['url']))echo' value="'.esc_html($settings['url']).'" ';
+        if(!empty($never_loose_contact_settings['url']))echo' value="'.esc_html($never_loose_contact_settings['url']).'" ';
         echo'/></p>';
         echo'<p class="submit"><input type="hidden" name="save_contact_form_settings" value="yes" /><input type="submit" class="primary-button" value="'.__('Save Settings','nlcf').' &raquo;"/></p></form>';
 }
@@ -305,7 +313,7 @@ function contact_form_widget($args)
 }
 function contact_form_widget_init()
 {
-    wp_register_sidebar_widget('Contact Form','Contact Form','contact_form_widget');
+    wp_register_sidebar_widget('ContactForm','Contact Form','contact_form_widget');
     
     
 }
