@@ -29,7 +29,7 @@ function contact_form_install()
             $never_loose_contact_settings=$old_settings;
             delete_option('contact_form_settings');
         }
-        $never_loose_contact_settings['version']=0.32;//current version number
+        $never_loose_contact_settings['version']=0.40;//current version number
         update_option('never_loose_contact_form_settings',$never_loose_contact_settings);
         $wpdb->query('CREATE TABLE IF NOT EXISTS '.CONT_TBL.' (`name` text NOT NULL,`comment` text NOT NULL,`subject` text NOT NULL, `email` text NOT NULL,`post_date` datetime NOT NULL,`read` datetime NOT NULL DEFAULT "0000-00-00 00:00:00",`id` int(11) NOT NULL AUTO_INCREMENT, PRIMARY KEY (`id`)) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;');
         if($wpdb->get_var('SHOW COLUMNS FROM '.CONT_TBL.' LIKE "ip"')!='ip')
