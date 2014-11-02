@@ -1,11 +1,9 @@
-
 .contact_form_reply{font-style:italic;padding-left:50px;}
 .admin_contact_form{border:1px solid #990000;border-radius:10px; width:250px;}
 .middle{vertical-align:middle;padding-right:10px;}
 .contact_form_wrap label{width:150px; float:left;}
 .contact_form_wrap input[type="text"]{width:300px;}
 .contact_form_wrap textarea{width:450px;height:300px;}
-
 .contact_form_widget label{float:left;width:65px;}
 .contact_form_widget img{vertical-align:middle;}
 .contact-form_widget input[type="text"]{width:190px;}
