@@ -4,7 +4,7 @@ Plugin Name: Never Loose Contact Form
 Plugin URI: 
 Description: Simple to use spam free contact form using simple checkbox captcha, saving messages to database and emailing your admin contact
 Author: Andy Moyle
-Version: 0.40
+Version: 0.41
 Author URI: http://www.themoyles.co.uk/web-development/contact-form-plugin/
 */
 if (!function_exists ('add_action')):
@@ -72,8 +72,8 @@ add_action('wp_enqueue_scripts','contact_form_css');
 function contact_form_css()
 {
     wp_enqueue_style('contact_form_css',WP_PLUGIN_URL.'/never-loose-contact-form/contact-form.css');
-    wp_enqueue_script('jquery');
-    wp_enqueue_script('nlcf_js',WP_PLUGIN_URL.'/never-loose-contact-form/nlcf.js');
+    
+    wp_enqueue_script('nlcf_js',WP_PLUGIN_URL.'/never-loose-contact-form/nlcf.js',array('jquery'),NULL,TRUE);
 }
 add_shortcode('contact_form','contact_form_shortcode');
 
